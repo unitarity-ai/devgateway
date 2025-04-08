@@ -1,0 +1,10 @@
+---
+name: "Apigateway"
+metadata:
+  built-with-quarkus-core: "3.21.1"
+  requires-quarkus-core: "[3.21,)"
+  minimum-java-version: "17"
+  extension-dependencies:
+  - "io.quarkus:quarkus-arc"
+  - "io.quarkus:quarkus-core"
+artifact: "com.unitarity:apigateway::jar:1.0.0-SNAPSHOT"
