@@ -72,7 +72,7 @@ class ApigatewayProcessor {
                 .withExtraHost("host.docker.internal", "host-gateway")
                 .waitingFor(Wait.forLogMessage(readyRegex, 1))
                 .withReuse(true);
-        container.setPortBindings(List.of("8090:80"));
+        container.setPortBindings(List.of("8080:80"));
 
         container.start();
 
