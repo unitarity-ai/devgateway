@@ -5,6 +5,9 @@ import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.dev.devservices.DevServicesConfig;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -24,8 +27,8 @@ class ApigatewayProcessor {
         return new FeatureBuildItem(FEATURE);
     }
 
-    @BuildStep(onlyIfNot = IsNormal.class)
-    public DevServicesResultBuildItem createKongContainer() {
+    @BuildStep(onlyIfNot = IsNormal.class, onlyIf = DevServicesConfig.Enabled.class)
+    public DevServicesResultBuildItem createKongContainer(DevGatewayConfig config) {
         DockerImageName dockerImageName = DockerImageName.parse("kong");
         var env = Map.ofEntries(
                 entry("KONG_DATABASE", "off"),
@@ -41,8 +44,10 @@ class ApigatewayProcessor {
                         MountableFile.forClasspathResource("kong.yml"),
                         "/kong/kong.yml"
                 )
+                .withExtraHost("devhost", config.devHost())
                 .waitingFor(Wait.forLogMessage(readyRegex, 1))
                 .withReuse(true);
+        
         container.setPortBindings(List.of("8000:8000", "8001:8001", "8002:8002", "8443:8443", "8444:8444", "8445:8445"));
 
         container.start();
@@ -57,8 +62,8 @@ class ApigatewayProcessor {
                 configOverrides).toBuildItem();
     }
 
-    @BuildStep(onlyIfNot = IsNormal.class)
-    public DevServicesResultBuildItem createNginxContainer() {
+    @BuildStep(onlyIfNot = IsNormal.class, onlyIf = DevServicesConfig.Enabled.class)
+    public DevServicesResultBuildItem createNginxContainer(DevGatewayConfig config) {
         DockerImageName dockerImageName = DockerImageName.parse("nginx");
 
         String readyRegex = ".*start worker process.*";
@@ -69,9 +74,10 @@ class ApigatewayProcessor {
                         MountableFile.forClasspathResource("nginx.conf"),
                         "/etc/nginx/conf.d/default.conf"
                 )
-                .withExtraHost("host.docker.internal", "host-gateway")
+                .withExtraHost("devhost", config.devHost())
                 .waitingFor(Wait.forLogMessage(readyRegex, 1))
                 .withReuse(true);
+
         container.setPortBindings(List.of("8080:80"));
 
         container.start();
